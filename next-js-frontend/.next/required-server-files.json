@@ -99,7 +99,7 @@
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "C:\\Users\\Satish",
+    "outputFileTracingRoot": "C:\\Users\\sruja\\OneDrive\\Pictures\\Desktop\\Campus-Flow\\next-js-frontend",
     "cacheComponents": false,
     "cacheLife": {
       "default": {
@@ -157,7 +157,7 @@
       "proxyPrefetch": "flexible",
       "optimisticClientCache": true,
       "manualClientBasePath": false,
-      "cpus": 23,
+      "cpus": 11,
       "memoryBasedWorkersCount": false,
       "imgOptConcurrency": null,
       "imgOptTimeoutInSeconds": 7,
@@ -289,12 +289,12 @@
     "bundlePagesRouterDependencies": false,
     "configFileName": "next.config.mjs",
     "turbopack": {
-      "root": "C:\\Users\\Satish"
+      "root": "C:\\Users\\sruja\\OneDrive\\Pictures\\Desktop\\Campus-Flow\\next-js-frontend"
     },
     "distDirRoot": ".next"
   },
-  "appDir": "C:\\Users\\Satish\\OneDrive\\Desktop\\Collage Events\\next-js-frontend",
-  "relativeAppDir": "OneDrive\\Desktop\\Collage Events\\next-js-frontend",
+  "appDir": "C:\\Users\\sruja\\OneDrive\\Pictures\\Desktop\\Campus-Flow\\next-js-frontend",
+  "relativeAppDir": "",
   "files": [
     ".next\\routes-manifest.json",
     ".next\\server\\pages-manifest.json",

@@ -48,14 +48,18 @@ export interface UpdateEventData extends Partial<CreateEventData> {
 export interface Registration {
   id: string;
   eventId: string;
-  eventCode: string;
+  eventCode?: string;
   name: string;
   email: string;
-  phone: string;
-  paymentStatus: "pending" | "completed" | "failed";
+  phone?: string;
+  paymentStatus: "pending" | "completed" | "failed" | "paid";
   paymentId?: string;
   orderId?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  amount?: number;
   createdAt?: string;
+  paidAt?: string;
 }
 
 export interface CreateRegistrationData {

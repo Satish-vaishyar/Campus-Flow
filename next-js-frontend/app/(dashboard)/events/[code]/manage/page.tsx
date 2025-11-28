@@ -566,18 +566,18 @@ export default function EventManagePage() {
                           <TableRow key={reg.id}>
                             <TableCell className="font-medium">{reg.name}</TableCell>
                             <TableCell>{reg.email}</TableCell>
-                            <TableCell>{reg.phone}</TableCell>
+                            <TableCell>{reg.phone || "-"}</TableCell>
                             <TableCell>
                               <Badge
                                 variant={
-                                  reg.paymentStatus === "completed"
+                                  reg.paymentStatus === "completed" || reg.paymentStatus === "paid"
                                     ? "default"
                                     : reg.paymentStatus === "pending"
                                       ? "secondary"
                                       : "destructive"
                                 }
                               >
-                                {reg.paymentStatus}
+                                {reg.paymentStatus === "paid" ? "Paid" : reg.paymentStatus}
                               </Badge>
                             </TableCell>
                             <TableCell>

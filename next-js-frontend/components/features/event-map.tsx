@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 interface EventMapProps {
   lat: number
@@ -25,22 +25,33 @@ export function EventMap({
 }: EventMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
+  const [mapError, setMapError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Ensure coordinates are numbers
+  // Ensure coordinates are numbers and valid
   const latitude = Number(lat)
   const longitude = Number(lng)
-  const isValidLocation = !isNaN(latitude) && !isNaN(longitude) && (latitude !== 0 || longitude !== 0)
+  const isValidLocation = !isNaN(latitude) && !isNaN(longitude) && 
+    latitude >= -90 && latitude <= 90 && 
+    longitude >= -180 && longitude <= 180 &&
+    (latitude !== 0 || longitude !== 0)
 
   useEffect(() => {
-    if (!mapContainerRef.current || !isValidLocation) return
+    if (!mapContainerRef.current || !isValidLocation) {
+      setIsLoading(false)
+      return
+    }
 
     const initMap = async () => {
       try {
+        // Dynamically import mapbox-gl and its CSS
         const mapboxgl = (await import("mapbox-gl")).default
+        await import("mapbox-gl/dist/mapbox-gl.css")
 
         const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
         if (!token) {
-          console.error("Mapbox token is missing")
+          setMapError("Mapbox token is missing")
+          setIsLoading(false)
           return
         }
         mapboxgl.accessToken = token
@@ -57,15 +68,25 @@ export function EventMap({
           interactive: interactive,
         })
 
+        map.on('load', () => {
+          setIsLoading(false)
+        })
+
+        map.on('error', (e) => {
+          console.error('Map error:', e)
+          setMapError('Failed to load map')
+          setIsLoading(false)
+        })
+
         if (interactive) {
           map.addControl(new mapboxgl.NavigationControl(), "top-right")
         }
 
         // Add marker with popup
         const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
-          `<div class="p-2">
+          `<div style="padding: 8px;">
             <strong>${eventName || "Event Location"}</strong>
-            ${address ? `<br/><span class="text-sm text-gray-600">${address}</span>` : ""}
+            ${address ? `<br/><span style="font-size: 12px; color: #666;">${address}</span>` : ""}
           </div>`
         )
 
@@ -77,6 +98,8 @@ export function EventMap({
         mapRef.current = map
       } catch (error) {
         console.error("Error initializing map:", error)
+        setMapError("Failed to initialize map")
+        setIsLoading(false)
       }
     }
 
@@ -96,16 +119,34 @@ export function EventMap({
         className={`flex items-center justify-center bg-muted rounded-lg ${className}`}
         style={{ height }}
       >
-        <p className="text-sm text-muted-foreground">No location set</p>
+        <p className="text-sm text-muted-foreground">No valid location set</p>
+      </div>
+    )
+  }
+
+  if (mapError) {
+    return (
+      <div
+        className={`flex items-center justify-center bg-muted rounded-lg ${className}`}
+        style={{ height }}
+      >
+        <p className="text-sm text-destructive">{mapError}</p>
       </div>
     )
   }
 
   return (
-    <div
-      ref={mapContainerRef}
-      className={`rounded-lg overflow-hidden ${className}`}
-      style={{ height }}
-    />
+    <div className="relative" style={{ height }}>
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg z-10">
+          <p className="text-sm text-muted-foreground">Loading map...</p>
+        </div>
+      )}
+      <div
+        ref={mapContainerRef}
+        className={`rounded-lg overflow-hidden ${className}`}
+        style={{ height, width: "100%" }}
+      />
+    </div>
   )
 }

@@ -1,3 +1,0 @@
-module.exports=[36974,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(12132);a.n(d("[project]/OneDrive/Desktop/Collage Events/next-js-frontend/node_modules/.pnpm/next@16.0.3_react-dom@19.2.0_react@19.2.0__react@19.2.0/node_modules/next/dist/client/components/builtin/global-error.js <module evaluation>"))},18393,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(12132);a.n(d("[project]/OneDrive/Desktop/Collage Events/next-js-frontend/node_modules/.pnpm/next@16.0.3_react-dom@19.2.0_react@19.2.0__react@19.2.0/node_modules/next/dist/client/components/builtin/global-error.js"))},44931,a=>{"use strict";a.i(36974);var b=a.i(18393);a.n(b)}];
-
-//# sourceMappingURL=1a639_next_dist_client_components_builtin_global-error_57fcd2e8.js.map

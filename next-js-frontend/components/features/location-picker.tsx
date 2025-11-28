@@ -24,51 +24,66 @@ export function LocationPicker({ value, onChange, className }: LocationPickerPro
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearching, setIsSearching] = useState(false)
   const [mapLoaded, setMapLoaded] = useState(false)
+  const [mapError, setMapError] = useState<string | null>(null)
 
   // Initialize map
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return
 
     const initMap = async () => {
-      const mapboxgl = (await import("mapbox-gl")).default
-      
-      mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ""
+      try {
+        const mapboxgl = (await import("mapbox-gl")).default
+        await import("mapbox-gl/dist/mapbox-gl.css")
+        
+        const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+        if (!token) {
+          setMapError("Mapbox token is missing")
+          return
+        }
+        mapboxgl.accessToken = token
 
-      const initialLng = value.lng || 77.209
-      const initialLat = value.lat || 28.6139
+        const initialLng = value.lng || 77.209
+        const initialLat = value.lat || 28.6139
 
-      const map = new mapboxgl.Map({
-        container: mapContainerRef.current!,
-        style: "mapbox://styles/mapbox/streets-v12",
-        center: [initialLng, initialLat],
-        zoom: 12,
-      })
+        const map = new mapboxgl.Map({
+          container: mapContainerRef.current!,
+          style: "mapbox://styles/mapbox/streets-v12",
+          center: [initialLng, initialLat],
+          zoom: 12,
+        })
 
-      map.addControl(new mapboxgl.NavigationControl(), "top-right")
+        map.addControl(new mapboxgl.NavigationControl(), "top-right")
 
-      // Add marker
-      const marker = new mapboxgl.Marker({
-        color: "#2563eb",
-        draggable: true,
-      })
-        .setLngLat([initialLng, initialLat])
-        .addTo(map)
+        // Add marker
+        const marker = new mapboxgl.Marker({
+          color: "#2563eb",
+          draggable: true,
+        })
+          .setLngLat([initialLng, initialLat])
+          .addTo(map)
 
-      // Handle marker drag
-      marker.on("dragend", () => {
-        const lngLat = marker.getLngLat()
-        reverseGeocode(lngLat.lng, lngLat.lat)
-      })
+        // Handle marker drag
+        marker.on("dragend", () => {
+          const lngLat = marker.getLngLat()
+          reverseGeocode(lngLat.lng, lngLat.lat)
+        })
 
-      // Handle map click
-      map.on("click", (e) => {
-        marker.setLngLat([e.lngLat.lng, e.lngLat.lat])
-        reverseGeocode(e.lngLat.lng, e.lngLat.lat)
-      })
+        // Handle map click
+        map.on("click", (e) => {
+          marker.setLngLat([e.lngLat.lng, e.lngLat.lat])
+          reverseGeocode(e.lngLat.lng, e.lngLat.lat)
+        })
 
-      mapRef.current = map
-      markerRef.current = marker
-      setMapLoaded(true)
+        map.on("load", () => {
+          setMapLoaded(true)
+        })
+
+        mapRef.current = map
+        markerRef.current = marker
+      } catch (error) {
+        console.error("Error initializing map:", error)
+        setMapError("Failed to load map")
+      }
     }
 
     initMap()
@@ -184,10 +199,22 @@ export function LocationPicker({ value, onChange, className }: LocationPickerPro
         </div>
 
         {/* Map */}
-        <div
-          ref={mapContainerRef}
-          className="w-full h-[300px] rounded-lg overflow-hidden border"
-        />
+        <div className="relative w-full h-[300px] rounded-lg overflow-hidden border">
+          {!mapLoaded && !mapError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
+          {mapError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
+              <p className="text-sm text-destructive">{mapError}</p>
+            </div>
+          )}
+          <div
+            ref={mapContainerRef}
+            className="w-full h-full"
+          />
+        </div>
 
         {/* Coordinates Display */}
         <div className="grid grid-cols-2 gap-4">

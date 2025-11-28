@@ -18,25 +18,32 @@ export const registrationsApi = {
     return data.registrations || data;
   },
 
-  // Create a new registration (initiates payment)
+  // Create a new registration (initiates payment for paid events)
   createRegistration: async (
     registrationData: CreateRegistrationData
   ): Promise<{
     registration: Registration;
-    orderId: string;
+    orderId: string | null;
     amount: number;
     currency: string;
+    isFree: boolean;
   }> => {
     const response = await fetch(`${API_URL}/registrations`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(registrationData),
+      body: JSON.stringify({
+        eventCode: registrationData.eventCode,
+        name: registrationData.name,
+        email: registrationData.email,
+        phone: registrationData.phone,
+        amount: registrationData.amount,
+      }),
     });
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || "Failed to create registration");
+      throw new Error(error.message || error.error || "Failed to create registration");
     }
     return response.json();
   },
@@ -50,11 +57,16 @@ export const registrationsApi = {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(paymentData),
+      body: JSON.stringify({
+        razorpayPaymentId: paymentData.razorpayPaymentId,
+        razorpayOrderId: paymentData.razorpayOrderId,
+        razorpaySignature: paymentData.razorpaySignature,
+        registrationId: paymentData.registrationId,
+      }),
     });
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || "Payment verification failed");
+      throw new Error(error.message || error.error || "Payment verification failed");
     }
     return response.json();
   },

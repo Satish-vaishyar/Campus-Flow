@@ -1,3 +1,0 @@
-module.exports=[29696,a=>{a.n(a.i(69037))},4268,a=>{a.n(a.i(1625))},47416,a=>{a.n(a.i(63085))},47025,a=>{a.n(a.i(99347))},93151,a=>{a.n(a.i(44931))},99347,(a,b,c)=>{"use strict";Object.defineProperty(c,"__esModule",{value:!0}),Object.defineProperty(c,"default",{enumerable:!0,get:function(){return f}});let d=a.r(86394),e=a.r(54547);function f(){return(0,d.jsx)(e.HTTPAccessErrorFallback,{status:401,message:"You're not authorized to access this page."})}("function"==typeof c.default||"object"==typeof c.default&&null!==c.default)&&void 0===c.default.__esModule&&(Object.defineProperty(c.default,"__esModule",{value:!0}),Object.assign(c.default,c),b.exports=c.default)}];
-
-//# sourceMappingURL=OneDrive_Desktop_Collage%20Events_next-js-frontend_5737c37c._.js.map

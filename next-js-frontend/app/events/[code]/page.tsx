@@ -96,7 +96,15 @@ export default function EventPublicPage() {
         amount: event?.ticketPrice || 0,
       })
 
-      // Initialize Razorpay payment
+      // Check if it's a free event
+      if (result.isFree || (event?.ticketPrice || 0) <= 0) {
+        toast.success("Registration successful! Check your email for confirmation.")
+        setRegistrationOpen(false)
+        setFormData({ name: "", email: "", phone: "" })
+        return
+      }
+
+      // Initialize Razorpay payment for paid events
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: result.amount,
@@ -336,7 +344,9 @@ export default function EventPublicPage() {
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Ticket Price</span>
-                    <span className="text-2xl font-bold">₹{event.ticketPrice}</span>
+                    <span className="text-2xl font-bold">
+                      {(event.ticketPrice || 0) > 0 ? `₹${event.ticketPrice}` : "Free"}
+                    </span>
                   </div>
 
                   <Separator />
@@ -397,7 +407,9 @@ export default function EventPublicPage() {
 
                           <div className="flex items-center justify-between text-sm">
                             <span>Total Amount</span>
-                            <span className="font-bold">₹{event.ticketPrice}</span>
+                            <span className="font-bold">
+                              {(event?.ticketPrice || 0) > 0 ? `₹${event?.ticketPrice}` : "Free"}
+                            </span>
                           </div>
 
                           <Button
@@ -410,8 +422,10 @@ export default function EventPublicPage() {
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 Processing...
                               </>
+                            ) : (event?.ticketPrice || 0) > 0 ? (
+                              <>Pay ₹{event?.ticketPrice} & Register</>
                             ) : (
-                              <>Pay ₹{event.ticketPrice} & Register</>
+                              <>Register for Free</>
                             )}
                           </Button>
                         </form>
