@@ -2874,7 +2874,7 @@ __turbopack_context__.s([
     "eventsApi",
     ()=>eventsApi
 ]);
-const API_URL = ("TURBOPACK compile-time value", "http://localhost:5001/api") || "http://localhost:3001/api";
+const API_URL = ("TURBOPACK compile-time value", "https://campus-flow-beta.vercel.app/api") || "http://localhost:3001/api";
 const eventsApi = {
     // Get all events for a user
     getEvents: async (userId)=>{

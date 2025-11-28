@@ -968,3 +968,5 @@ Expected ';', '}' or <eof>
 [00:35:07.496] Server  ERROR   Error: Could not parse module '[project]/OneDrive/Desktop/Collage Events/next-js-frontend/app/layout.tsx'
 
 Expected ';', '}' or <eof>
+[00:41:01.458] Server  LOG        Reload env: .env.local
+[00:41:06.530] Server  LOG      ✓ Compiled in 3.5s

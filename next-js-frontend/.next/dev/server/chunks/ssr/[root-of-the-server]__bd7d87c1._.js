@@ -4033,7 +4033,7 @@ __turbopack_context__.s([
     "eventsApi",
     ()=>eventsApi
 ]);
-const API_URL = ("TURBOPACK compile-time value", "http://localhost:5001/api") || "http://localhost:3001/api";
+const API_URL = ("TURBOPACK compile-time value", "https://campus-flow-beta.vercel.app/api") || "http://localhost:3001/api";
 const eventsApi = {
     // Get all events for a user
     getEvents: async (userId)=>{
@@ -4331,7 +4331,7 @@ __turbopack_context__.s([
     "ticketsApi",
     ()=>ticketsApi
 ]);
-const API_URL = ("TURBOPACK compile-time value", "http://localhost:5001/api") || "http://localhost:3001/api";
+const API_URL = ("TURBOPACK compile-time value", "https://campus-flow-beta.vercel.app/api") || "http://localhost:3001/api";
 const ticketsApi = {
     // Get tickets for an event by eventCode
     getTickets: async (eventCode)=>{
@@ -4446,7 +4446,7 @@ __turbopack_context__.s([
     "registrationsApi",
     ()=>registrationsApi
 ]);
-const API_URL = ("TURBOPACK compile-time value", "http://localhost:5001/api") || "http://localhost:3001/api";
+const API_URL = ("TURBOPACK compile-time value", "https://campus-flow-beta.vercel.app/api") || "http://localhost:3001/api";
 const registrationsApi = {
     // Get registrations for an event
     getRegistrations: async (eventCode)=>{
@@ -4571,7 +4571,7 @@ __turbopack_context__.s([
     "webhooksApi",
     ()=>webhooksApi
 ]);
-const WEBHOOK_URL = ("TURBOPACK compile-time value", "http://localhost:5001/webhook") || "http://localhost:3001/webhook";
+const WEBHOOK_URL = ("TURBOPACK compile-time value", "https://campus-flow-beta.vercel.app/webhook") || "http://localhost:3001/webhook";
 const webhooksApi = {
     // Send Telegram poll
     sendPoll: async (pollData)=>{
