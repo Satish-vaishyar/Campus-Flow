@@ -10,6 +10,7 @@ const router = express.Router();
 router.post('/telegram', async (req, res) => {
     try {
         const update = req.body;
+        console.log('📨 Received Telegram Webhook:', JSON.stringify(update, null, 2));
 
         // Handle webhook asynchronously
         handleTelegramWebhook(update).catch(error => {

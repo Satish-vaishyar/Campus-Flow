@@ -105,8 +105,58 @@ async function ingestDocument(eventId, documentId, buffer, filename) {
     return chunks.length;
 }
 
+/**
+ * Process indoor map: describe -> chunk -> embed -> store
+ */
+async function ingestIndoorMap(eventId, fileId, buffer, mimeType) {
+    const db = admin.firestore();
+    const { generateImageDescription } = require('./gemini');
+
+    console.log(`🗺️ Processing indoor map: ${fileId}`);
+
+    // 1. Generate description using Gemini Vision
+    const description = await generateImageDescription(buffer, mimeType);
+    console.log(`✅ Generated map description (${description.length} chars)`);
+
+    // 2. Chunk description
+    const chunks = chunkText(description);
+    console.log(`✅ Created ${chunks.length} chunks from map description`);
+
+    // 3. Generate embeddings and store chunks
+    const batch = db.batch();
+
+    for (let i = 0; i < chunks.length; i++) {
+        const chunkText = chunks[i];
+        const embedding = await generateEmbedding(chunkText);
+
+        const chunkRef = db.collection('events').doc(eventId)
+            .collection('chunks').doc();
+
+        batch.set(chunkRef, {
+            documentId: fileId, // Use map file ID as document ID
+            type: 'indoor_map',
+            text: `[INDOOR MAP DESCRIPTION] ${chunkText}`,
+            embedding,
+            position: i,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+    }
+
+    // Update event metadata to indicate map is indexed
+    const eventRef = db.collection('events').doc(eventId);
+    batch.update(eventRef, {
+        indoorMapIndexedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    await batch.commit();
+    console.log(`✅ Indexed indoor map description`);
+
+    return chunks.length;
+}
+
 module.exports = {
     parseDocument,
     chunkText,
-    ingestDocument
+    ingestDocument,
+    ingestIndoorMap
 };
