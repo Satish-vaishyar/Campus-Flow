@@ -2,6 +2,7 @@ const express = require("express");
 const { admin } = require("../config/firebase");
 const { COLLECTIONS } = require("../config/firestore-schema");
 const { ingestDocument } = require("../services/ingestion");
+const { uploadDocument, uploadIndoorMap, getDocumentStream, getIndoorMapStream, deleteDocument } = require("../config/mongodb");
 const multer = require("multer");
 
 const router = express.Router();
@@ -300,18 +301,27 @@ async function resolveEventId(eventCodeOrId) {
   const db = admin.firestore();
 
   // First try direct doc lookup
+<<<<<<< HEAD
+  const eventDoc = await db.collection(COLLECTIONS.EVENTS).doc(eventCodeOrId).get();
+=======
   const eventDoc = await db
     .collection(COLLECTIONS.EVENTS)
     .doc(eventCodeOrId)
     .get();
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
   if (eventDoc.exists) {
     return eventCodeOrId;
   }
 
   // Try finding by eventCode
+<<<<<<< HEAD
+  const snapshot = await db.collection(COLLECTIONS.EVENTS)
+    .where('eventCode', '==', eventCodeOrId.toUpperCase())
+=======
   const snapshot = await db
     .collection(COLLECTIONS.EVENTS)
     .where("eventCode", "==", eventCodeOrId.toUpperCase())
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
     .limit(1)
     .get();
 
@@ -325,18 +335,82 @@ async function resolveEventId(eventCodeOrId) {
 /**
  * POST /api/events/:id/documents - Upload and process document
  */
+<<<<<<< HEAD
+router.post('/:id/documents', upload.single('file'), async (req, res) => {
+=======
 router.post("/:id/documents", upload.single("file"), async (req, res) => {
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
   try {
     const db = admin.firestore();
     const file = req.file;
 
     if (!file) {
+<<<<<<< HEAD
+      return res.status(400).json({ error: 'No file uploaded' });
+=======
       return res.status(400).json({ error: "No file uploaded" });
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
     }
 
     // Resolve eventCode to eventId
     const eventId = await resolveEventId(req.params.id);
     if (!eventId) {
+<<<<<<< HEAD
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    // Upload to MongoDB GridFS (free storage)
+    const { fileId, filename } = await uploadDocument(
+      eventId,
+      file.buffer,
+      `${Date.now()}_${file.originalname}`,
+      file.mimetype
+    );
+
+    // Create document record in Firestore (metadata only)
+    const docRef = await db.collection(COLLECTIONS.EVENTS).doc(eventId)
+      .collection('documents').add({
+        filename: file.originalname,
+        mongoFileId: fileId,
+        storageUrl: `/api/events/${eventId}/documents/${fileId}/download`,
+        uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
+        processedAt: null,
+        chunkCount: 0
+      });
+
+    // Process document asynchronously (in production, use background worker)
+    ingestDocument(eventId, docRef.id, file.buffer, file.originalname)
+      .catch(error => console.error('Document processing error:', error));
+
+    res.status(201).json({
+      id: docRef.id,
+      mongoFileId: fileId,
+      message: 'Document uploaded. Processing in background...'
+    });
+  } catch (error) {
+    console.error('Error uploading document:', error);
+    res.status(500).json({ error: 'Failed to upload document' });
+  }
+});
+
+/**
+ * GET /api/events/:id/documents/:fileId/download - Download document from MongoDB
+ */
+router.get('/:id/documents/:fileId/download', async (req, res) => {
+  try {
+    const fileId = req.params.fileId;
+    const downloadStream = getDocumentStream(fileId);
+
+    downloadStream.on('error', (error) => {
+      console.error('Error streaming document:', error);
+      res.status(404).json({ error: 'Document not found' });
+    });
+
+    downloadStream.pipe(res);
+  } catch (error) {
+    console.error('Error downloading document:', error);
+    res.status(500).json({ error: 'Failed to download document' });
+=======
       return res.status(404).json({ error: "Event not found" });
     }
 
@@ -383,24 +457,86 @@ router.post("/:id/documents", upload.single("file"), async (req, res) => {
   } catch (error) {
     console.error("Error uploading document:", error);
     res.status(500).json({ error: "Failed to upload document" });
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
   }
 });
 
 /**
  * POST /api/events/:id/indoor-map - Upload indoor map
  */
+<<<<<<< HEAD
+router.post('/:id/indoor-map', upload.single('file'), async (req, res) => {
+=======
 router.post("/:id/indoor-map", upload.single("file"), async (req, res) => {
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
   try {
     const db = admin.firestore();
     const file = req.file;
 
     if (!file) {
+<<<<<<< HEAD
+      return res.status(400).json({ error: 'No file uploaded' });
+=======
       return res.status(400).json({ error: "No file uploaded" });
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
     }
 
     // Resolve eventCode to eventId if necessary
     const eventId = await resolveEventId(req.params.id);
     if (!eventId) {
+<<<<<<< HEAD
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    // Upload to MongoDB GridFS (free storage)
+    const { fileId, filename } = await uploadIndoorMap(
+      eventId,
+      file.buffer,
+      `${Date.now()}_${file.originalname}`,
+      file.mimetype
+    );
+
+    // Store the API URL for indoor map access
+    const indoorMapUrl = `/api/events/${eventId}/indoor-map/${fileId}`;
+
+    // Update event with indoor map URL
+    await db.collection(COLLECTIONS.EVENTS).doc(eventId).update({
+      indoorMapUrl: indoorMapUrl,
+      indoorMapFileId: fileId,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Trigger asynchronous map ingestion
+    const { ingestIndoorMap } = require('../services/ingestion');
+    ingestIndoorMap(eventId, fileId, file.buffer, file.mimetype)
+      .catch(error => console.error('Indoor map ingestion error:', error));
+
+    res.json({ indoorMapUrl: indoorMapUrl, fileId: fileId });
+  } catch (error) {
+    console.error('Error uploading indoor map:', error);
+    res.status(500).json({ error: 'Failed to upload indoor map' });
+  }
+});
+
+/**
+ * GET /api/events/:id/indoor-map/:fileId - Get indoor map image from MongoDB
+ */
+router.get('/:id/indoor-map/:fileId', async (req, res) => {
+  try {
+    const fileId = req.params.fileId;
+    const downloadStream = getIndoorMapStream(fileId);
+
+    downloadStream.on('error', (error) => {
+      console.error('Error streaming indoor map:', error);
+      res.status(404).json({ error: 'Indoor map not found' });
+    });
+
+    res.setHeader('Content-Type', 'image/png');
+    downloadStream.pipe(res);
+  } catch (error) {
+    console.error('Error getting indoor map:', error);
+    res.status(500).json({ error: 'Failed to get indoor map' });
+=======
       return res.status(404).json({ error: "Event not found" });
     }
 
@@ -430,6 +566,7 @@ router.post("/:id/indoor-map", upload.single("file"), async (req, res) => {
   } catch (error) {
     console.error("Error uploading indoor map:", error);
     res.status(500).json({ error: "Failed to upload indoor map" });
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
   }
 });
 
@@ -444,12 +581,20 @@ router.put("/:id/pois", async (req, res) => {
     // Resolve eventCode to eventId if necessary
     const eventId = await resolveEventId(req.params.id);
     if (!eventId) {
+<<<<<<< HEAD
+      return res.status(404).json({ error: 'Event not found' });
+=======
       return res.status(404).json({ error: "Event not found" });
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
     }
 
     await db.collection(COLLECTIONS.EVENTS).doc(eventId).update({
       indoorMapPOIs: pois,
+<<<<<<< HEAD
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+=======
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
     });
 
     res.json({ success: true });
@@ -462,7 +607,11 @@ router.put("/:id/pois", async (req, res) => {
 /**
  * GET /api/events/:id/documents - Get all documents with processing status
  */
+<<<<<<< HEAD
+router.get('/:id/documents', async (req, res) => {
+=======
 router.get("/:id/documents", async (req, res) => {
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
   try {
     const db = admin.firestore();
     let eventId = req.params.id;
@@ -471,24 +620,40 @@ router.get("/:id/documents", async (req, res) => {
     const eventDoc = await db.collection(COLLECTIONS.EVENTS).doc(eventId).get();
     if (!eventDoc.exists) {
       // Try finding by eventCode
+<<<<<<< HEAD
+      const snapshot = await db.collection(COLLECTIONS.EVENTS)
+        .where('eventCode', '==', eventId)
+=======
       const snapshot = await db
         .collection(COLLECTIONS.EVENTS)
         .where("eventCode", "==", eventId)
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
         .limit(1)
         .get();
 
       if (snapshot.empty) {
+<<<<<<< HEAD
+        return res.status(404).json({ error: 'Event not found' });
+=======
         return res.status(404).json({ error: "Event not found" });
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
       }
       eventId = snapshot.docs[0].id;
     }
 
     // Get all documents for this event
+<<<<<<< HEAD
+    const documentsSnapshot = await db.collection(COLLECTIONS.EVENTS)
+      .doc(eventId)
+      .collection('documents')
+      .orderBy('uploadedAt', 'desc')
+=======
     const documentsSnapshot = await db
       .collection(COLLECTIONS.EVENTS)
       .doc(eventId)
       .collection("documents")
       .orderBy("uploadedAt", "desc")
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
       .get();
 
     const documents = [];
@@ -496,11 +661,18 @@ router.get("/:id/documents", async (req, res) => {
       const data = doc.data();
 
       // Get chunk count for this document
+<<<<<<< HEAD
+      const chunksSnapshot = await db.collection(COLLECTIONS.EVENTS)
+        .doc(eventId)
+        .collection('chunks')
+        .where('documentId', '==', doc.id)
+=======
       const chunksSnapshot = await db
         .collection(COLLECTIONS.EVENTS)
         .doc(eventId)
         .collection("chunks")
         .where("documentId", "==", doc.id)
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
         .get();
 
       documents.push({
@@ -510,14 +682,23 @@ router.get("/:id/documents", async (req, res) => {
         uploadedAt: data.uploadedAt?.toDate?.() || null,
         processedAt: data.processedAt?.toDate?.() || null,
         chunkCount: chunksSnapshot.size,
+<<<<<<< HEAD
+        status: data.processedAt ? 'indexed' : 'processing',
+        isIndexed: !!data.processedAt
+=======
         status: data.processedAt ? "indexed" : "processing",
         isIndexed: !!data.processedAt,
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
       });
     }
 
     // Calculate total stats
     const totalChunks = documents.reduce((sum, doc) => sum + doc.chunkCount, 0);
+<<<<<<< HEAD
+    const indexedDocs = documents.filter(d => d.isIndexed).length;
+=======
     const indexedDocs = documents.filter((d) => d.isIndexed).length;
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
 
     res.json({
       documents,
@@ -526,19 +707,32 @@ router.get("/:id/documents", async (req, res) => {
         indexedDocuments: indexedDocs,
         processingDocuments: documents.length - indexedDocs,
         totalChunks,
+<<<<<<< HEAD
+        ragEnabled: totalChunks > 0
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching documents:', error);
+    res.status(500).json({ error: 'Failed to fetch documents' });
+=======
         ragEnabled: totalChunks > 0,
       },
     });
   } catch (error) {
     console.error("Error fetching documents:", error);
     res.status(500).json({ error: "Failed to fetch documents" });
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
   }
 });
 
 /**
  * DELETE /api/events/:eventId/documents/:docId - Delete a document and its chunks
  */
+<<<<<<< HEAD
+router.delete('/:eventId/documents/:docId', async (req, res) => {
+=======
 router.delete("/:eventId/documents/:docId", async (req, res) => {
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
   try {
     const db = admin.firestore();
     let eventId = req.params.eventId;
@@ -547,19 +741,43 @@ router.delete("/:eventId/documents/:docId", async (req, res) => {
     // Check if eventId is eventCode and convert to eventId
     const eventDoc = await db.collection(COLLECTIONS.EVENTS).doc(eventId).get();
     if (!eventDoc.exists) {
+<<<<<<< HEAD
+      const snapshot = await db.collection(COLLECTIONS.EVENTS)
+        .where('eventCode', '==', eventId)
+=======
       const snapshot = await db
         .collection(COLLECTIONS.EVENTS)
         .where("eventCode", "==", eventId)
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
         .limit(1)
         .get();
 
       if (snapshot.empty) {
+<<<<<<< HEAD
+        return res.status(404).json({ error: 'Event not found' });
+=======
         return res.status(404).json({ error: "Event not found" });
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
       }
       eventId = snapshot.docs[0].id;
     }
 
     // Delete chunks for this document
+<<<<<<< HEAD
+    const chunksSnapshot = await db.collection(COLLECTIONS.EVENTS)
+      .doc(eventId)
+      .collection('chunks')
+      .where('documentId', '==', docId)
+      .get();
+
+    const batch = db.batch();
+    chunksSnapshot.forEach(chunk => batch.delete(chunk.ref));
+
+    // Delete the document record
+    const docRef = db.collection(COLLECTIONS.EVENTS)
+      .doc(eventId)
+      .collection('documents')
+=======
     const chunksSnapshot = await db
       .collection(COLLECTIONS.EVENTS)
       .doc(eventId)
@@ -575,6 +793,7 @@ router.delete("/:eventId/documents/:docId", async (req, res) => {
       .collection(COLLECTIONS.EVENTS)
       .doc(eventId)
       .collection("documents")
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
       .doc(docId);
     batch.delete(docRef);
 
@@ -582,10 +801,17 @@ router.delete("/:eventId/documents/:docId", async (req, res) => {
 
     // TODO: Delete file from Firebase Storage as well
 
+<<<<<<< HEAD
+    res.json({ success: true, message: 'Document and chunks deleted' });
+  } catch (error) {
+    console.error('Error deleting document:', error);
+    res.status(500).json({ error: 'Failed to delete document' });
+=======
     res.json({ success: true, message: "Document and chunks deleted" });
   } catch (error) {
     console.error("Error deleting document:", error);
     res.status(500).json({ error: "Failed to delete document" });
+>>>>>>> 9fa57f41580550eb3e4e66c6595960192985aea1
   }
 });
 

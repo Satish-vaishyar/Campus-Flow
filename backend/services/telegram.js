@@ -8,18 +8,47 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
 /**
+ * Send typing action
+ */
+async function sendTypingAction(chatId) {
+    try {
+        await axios.post(`${TELEGRAM_API}/sendChatAction`, {
+            chat_id: chatId,
+            action: 'typing'
+        });
+    } catch (error) {
+        console.error('Failed to send typing action:', error.message);
+    }
+}
+
+/**
  * Send message to Telegram user
  */
 async function sendTelegramMessage(chatId, text) {
+    console.log(`📤 Sending Telegram message to ${chatId}: ${text.substring(0, 50)}...`);
     try {
-        await axios.post(`${TELEGRAM_API}/sendMessage`, {
+        const response = await axios.post(`${TELEGRAM_API}/sendMessage`, {
             chat_id: chatId,
             text,
             parse_mode: 'Markdown'
         });
-        console.log(`✅ Sent message to chat ${chatId}`);
+        console.log(`✅ Sent message to chat ${chatId}, Response: ${response.status}`);
     } catch (error) {
-        console.error('Telegram send error:', error.response?.data || error.message);
+        console.error('❌ Telegram send error (Markdown):', error.response?.data || error.message);
+
+        // Retry without Markdown if it was a parsing error
+        if (error.response?.data?.error_code === 400) {
+            console.log('🔄 Retrying as plain text...');
+            try {
+                await axios.post(`${TELEGRAM_API}/sendMessage`, {
+                    chat_id: chatId,
+                    text
+                });
+                console.log(`✅ Sent plain text message to chat ${chatId}`);
+            } catch (retryError) {
+                console.error('❌ Retry failed:', retryError.response?.data || retryError.message);
+            }
+        }
     }
 }
 
@@ -207,9 +236,11 @@ async function handleMessage(chatId, userId, username, messageText) {
     // Try to answer via RAG
     let autoAnswer = null;
     try {
+        await sendTypingAction(chatId);
         autoAnswer = await answerQuestion(event.id, messageText);
     } catch (error) {
         console.error('RAG error:', error);
+        console.error('RAG error details:', error.response?.data || error.message);
         autoAnswer = "I'm having trouble accessing event information. Let me create a ticket for the organizer.";
     }
 
@@ -253,25 +284,38 @@ async function handleMessage(chatId, userId, username, messageText) {
  * Handle Telegram webhook
  */
 async function handleTelegramWebhook(update) {
-    if (!update.message) return;
+    console.log('🔄 Processing webhook update:', JSON.stringify(update));
+    if (!update.message) {
+        console.log('⚠️ Update has no message, ignoring');
+        return;
+    }
 
     const chatId = update.message.chat.id;
     const userId = update.message.from.id;
     const username = update.message.from.username || update.message.from.first_name;
     const text = update.message.text;
 
-    if (!text) return;
+    console.log(`👤 User: ${username} (${userId}), Chat: ${chatId}, Text: ${text}`);
+
+    if (!text) {
+        console.log('⚠️ Message has no text, ignoring');
+        return;
+    }
 
     // Handle commands
     if (text.startsWith('/join')) {
+        console.log('👉 Handling /join command');
         const eventCode = text.split(' ')[1];
         await handleJoinCommand(chatId, userId, username, eventCode);
     } else if (text === '/faq') {
+        console.log('👉 Handling /faq command');
         await handleFaqCommand(chatId, userId);
     } else if (text.startsWith('/report')) {
+        console.log('👉 Handling /report command');
         const reportText = text.replace('/report', '').trim();
         await handleReportCommand(chatId, userId, reportText);
     } else {
+        console.log('👉 Handling regular message');
         // Regular message
         await handleMessage(chatId, userId, username, text);
     }

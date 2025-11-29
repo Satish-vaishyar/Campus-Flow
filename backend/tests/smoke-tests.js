@@ -7,7 +7,7 @@
 const axios = require('axios');
 const assert = require('assert');
 
-const API_URL = process.env.API_URL || 'http://localhost:3001';
+const API_URL = process.env.API_URL || 'http://localhost:5001';
 const SUCCESS = '✅';
 const FAIL = '❌';
 

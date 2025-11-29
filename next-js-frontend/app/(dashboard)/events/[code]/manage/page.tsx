@@ -493,32 +493,67 @@ export default function EventManagePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                      <ImageIcon className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-                      <Label
-                        htmlFor="map-upload"
-                        className="cursor-pointer text-primary hover:underline"
-                      >
-                        Click to upload or drag and drop
-                      </Label>
-                      <Input
-                        id="map-upload"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleIndoorMapUpload}
-                        disabled={uploadIndoorMap.isPending}
-                      />
-                      <p className="text-xs text-muted-foreground mt-2">
-                        PNG, JPG, or WebP up to 5MB
-                      </p>
-                      {uploadIndoorMap.isPending && (
-                        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Uploading...
+                    {event.indoorMap?.url ? (
+                      <div className="space-y-4">
+                        <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-muted">
+                          <img
+                            src={event.indoorMap.url}
+                            alt="Indoor Map"
+                            className="h-full w-full object-contain"
+                          />
                         </div>
-                      )}
-                    </div>
+                        <div className="flex justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => {
+                              if (confirm("Are you sure you want to replace the indoor map?")) {
+                                document.getElementById("map-upload")?.click();
+                              }
+                            }}
+                          >
+                            <Upload className="mr-2 h-4 w-4" />
+                            Replace Map
+                          </Button>
+                          <Input
+                            id="map-upload"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleIndoorMapUpload}
+                            disabled={uploadIndoorMap.isPending}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
+                        <ImageIcon className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+                        <Label
+                          htmlFor="map-upload"
+                          className="cursor-pointer text-primary hover:underline"
+                        >
+                          Click to upload or drag and drop
+                        </Label>
+                        <Input
+                          id="map-upload"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleIndoorMapUpload}
+                          disabled={uploadIndoorMap.isPending}
+                        />
+                        <p className="text-xs text-muted-foreground mt-2">
+                          PNG, JPG, or WebP up to 5MB
+                        </p>
+                        {uploadIndoorMap.isPending && (
+                          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Uploading...
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>

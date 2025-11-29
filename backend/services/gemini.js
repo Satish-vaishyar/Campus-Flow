@@ -11,9 +11,9 @@ const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 async function generateEmbedding(text) {
     try {
         const response = await axios.post(
-            `${GEMINI_BASE_URL}/models/embedding-001:embedContent?key=${GEMINI_API_KEY}`,
+            `${GEMINI_BASE_URL}/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`,
             {
-                model: 'models/embedding-001',
+                model: 'models/text-embedding-004',
                 content: {
                     parts: [{ text }]
                 }
@@ -35,7 +35,7 @@ async function generateEmbedding(text) {
 async function generateText(prompt) {
     try {
         const response = await axios.post(
-            `${GEMINI_BASE_URL}/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+            `${GEMINI_BASE_URL}/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
             {
                 contents: [{
                     parts: [{ text: prompt }]
@@ -45,8 +45,42 @@ async function generateText(prompt) {
 
         return response.data.candidates[0].content.parts[0].text;
     } catch (error) {
-        console.error('Text generation error:', error.response?.data || error.message);
-        throw new Error('Failed to generate text');
+        const details = error.response?.data?.error?.message || error.message;
+        console.error('Text generation error:', details);
+        throw new Error(`Failed to generate text: ${details}`);
+    }
+}
+
+/**
+ * Generate description for an image using Gemini Vision
+ * @param {Buffer} imageBuffer - Image data
+ * @param {string} mimeType - Image MIME type
+ * @returns {Promise<string>} - Description of the image
+ */
+async function generateImageDescription(imageBuffer, mimeType) {
+    try {
+        const response = await axios.post(
+            `${GEMINI_BASE_URL}/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
+            {
+                contents: [{
+                    parts: [
+                        { text: "Describe this indoor map in detail. List all rooms, landmarks, and explain how to navigate between them. Be specific about locations." },
+                        {
+                            inline_data: {
+                                mime_type: mimeType,
+                                data: imageBuffer.toString('base64')
+                            }
+                        }
+                    ]
+                }]
+            }
+        );
+
+        return response.data.candidates[0].content.parts[0].text;
+    } catch (error) {
+        const details = error.response?.data?.error?.message || error.message;
+        console.error('Image description error:', details);
+        throw new Error(`Failed to describe image: ${details}`);
     }
 }
 
@@ -105,5 +139,6 @@ module.exports = {
     generateEmbedding,
     generateText,
     createRAGPrompt,
-    createClassificationPrompt
+    createClassificationPrompt,
+    generateImageDescription
 };
